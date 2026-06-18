@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Button, Picker } from '@tarojs/components';
+import { View, Text, Button, Picker, ScrollView } from '@tarojs/components';
 import Taro, { useLoad } from '@tarojs/taro';
 import classnames from 'classnames';
 import { useAppStore } from '@/store/appStore';
@@ -23,10 +23,17 @@ const CycleEditPage: React.FC = () => {
   const [endDate, setEndDate] = useState<string>('2026-12-31');
   const [playerCount, setPlayerCount] = useState<number>(4);
   const [error, setError] = useState<string>('');
+  const [generateToDate, setGenerateToDate] = useState<string>('2026-07-31');
+  const [generateResult, setGenerateResult] = useState<{
+    success: number;
+    skipped: string[];
+    total: number;
+  } | null>(null);
 
   const addCycleRule = useAppStore((s) => s.addCycleRule);
   const updateCycleRule = useAppStore((s) => s.updateCycleRule);
   const getCycleRuleById = useAppStore((s) => s.getCycleRuleById);
+  const generateBookingsFromCycle = useAppStore((s) => s.generateBookingsFromCycle);
 
   useLoad((options) => {
     const id = (options as { id?: string })?.id;
@@ -107,11 +114,49 @@ const CycleEditPage: React.FC = () => {
     }, 800);
   };
 
+  const handleGenerate = () => {
+    if (!editId) {
+      Taro.showToast({ title: '请先保存规则', icon: 'none' });
+      return;
+    }
+    if (generateToDate < startDate) {
+      Taro.showToast({ title: '生成日期不能早于规则开始日期', icon: 'none' });
+      return;
+    }
+    Taro.showModal({
+      title: '生成未来预订',
+      content: `将生成从今天到 ${generateToDate} 的所有周期时段预订，确定继续吗？`,
+      success: (res) => {
+        if (res.confirm) {
+          const result = generateBookingsFromCycle(editId, generateToDate);
+          setGenerateResult(result);
+          if (result.success > 0 && result.skipped.length === 0) {
+            Taro.showToast({
+              title: `成功生成 ${result.success} 条`,
+              icon: 'success'
+            });
+          } else if (result.success > 0 && result.skipped.length > 0) {
+            Taro.showToast({
+              title: `成功 ${result.success} 条，跳过 ${result.skipped.length} 天`,
+              icon: 'none',
+              duration: 2500
+            });
+          } else {
+            Taro.showToast({
+              title: '所选日期均已被占用',
+              icon: 'none'
+            });
+          }
+        }
+      }
+    });
+  };
+
   const member = members[memberIndex];
   const course = courses[courseIndex];
 
   return (
-    <View className={styles.container}>
+    <ScrollView scrollY className={styles.container}>
       <Text className={styles.sectionTitle}>基本信息</Text>
       <View className={styles.formCard}>
         <Picker mode="selector" range={members.map((m) => `${m.name}（${m.isVip ? 'VIP' : '普通'}）`)} value={memberIndex} onChange={(e) => setMemberIndex(Number(e.detail.value))}>
@@ -201,6 +246,52 @@ const CycleEditPage: React.FC = () => {
         </Picker>
       </View>
 
+      {editId && (
+        <>
+          <Text className={styles.sectionTitle}>批量生成预订</Text>
+          <View className={styles.formCard}>
+            <Picker mode="date" value={generateToDate} onChange={(e) => setGenerateToDate(e.detail.value as string)}>
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>生成至</Text>
+                <View className={styles.formValue}>
+                  <Text>{generateToDate}</Text>
+                  <Text className={styles.arrow}>›</Text>
+                </View>
+              </View>
+            </Picker>
+            <View className={styles.generateInfo}>
+              <Text className={styles.generateInfoText}>
+                将生成每周{WEEKDAY_NAMES[weekday]} {startTime}-{endTime} 的预订，时段冲突将自动跳过
+              </Text>
+            </View>
+            <Button className={styles.generateBtn} onClick={handleGenerate}>
+              生成未来预订
+            </Button>
+
+            {generateResult && generateResult.skipped.length > 0 && (
+              <View className={styles.skippedList}>
+                <Text className={styles.skippedTitle}>已跳过日期（球道已被占用）：</Text>
+                <View className={styles.skippedTags}>
+                  {generateResult.skipped.map((date, idx) => (
+                    <View key={idx} className={styles.skippedTag}>
+                      <Text>{date}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {generateResult && (
+              <View className={styles.generateSummary}>
+                <Text className={styles.generateSummaryText}>
+                  总计 {generateResult.total} 个时段 · 成功生成 {generateResult.success} 条 · 跳过 {generateResult.skipped.length} 天
+                </Text>
+              </View>
+            )}
+          </View>
+        </>
+      )}
+
       <View className={styles.previewCard}>
         <Text className={styles.previewTitle}>规则预览</Text>
         <Text className={styles.previewText}>
@@ -217,7 +308,7 @@ const CycleEditPage: React.FC = () => {
           {editId ? '保存修改' : '创建周期规则'}
         </Button>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 

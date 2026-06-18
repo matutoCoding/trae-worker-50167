@@ -129,16 +129,21 @@
   align-items: center;
   gap: 8rpx;
   font-size: $font-size-sm;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
 
   &.idle {
+    background: rgba(46, 125, 50, 0.1);
     color: $color-success;
   }
 
   &.working {
+    background: rgba(255, 152, 0, 0.1);
     color: $color-warning;
   }
 
   &.rest {
+    background: rgba(158, 158, 158, 0.1);
     color: $color-text-tertiary;
   }
 }
@@ -181,4 +186,38 @@
     background: $color-bg-hover;
     color: $color-text-disabled;
   }
+}
+
+.currentBooking {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-top: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: rgba(46, 125, 50, 0.06);
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.bookingLabel {
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.bookingText {
+  flex: 1;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookingArrow {
+  color: $color-text-tertiary;
+  font-size: $font-size-lg;
 }

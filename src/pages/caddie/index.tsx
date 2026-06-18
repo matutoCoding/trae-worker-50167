@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, Image, Button, ScrollView } from '@tarojs/components';
+import React, { useState, useMemo } from 'react';
+import { View, Text, Image, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
-import { caddies, getCaddieLevelName } from '@/data/members';
+import { getCaddieLevelName } from '@/data/members';
+import { useAppStore } from '@/store/appStore';
 import StatCard from '@/components/StatCard';
 import EmptyState from '@/components/EmptyState';
 import type { Caddie } from '@/types';
@@ -10,11 +11,14 @@ import styles from './index.module.scss';
 
 const CaddiePage: React.FC = () => {
   const [filter, setFilter] = useState<'all' | Caddie['status']>('all');
-  const [list, setList] = useState<Caddie[]>(caddies);
+  const caddies = useAppStore((s) => s.caddies);
+  const bookings = useAppStore((s) => s.bookings);
 
-  const idleCount = list.filter(c => c.status === 'idle').length;
-  const workingCount = list.filter(c => c.status === 'working').length;
-  const restCount = list.filter(c => c.status === 'rest').length;
+  const stats = useMemo(() => ({
+    idle: caddies.filter(c => c.status === 'idle').length,
+    working: caddies.filter(c => c.status === 'working').length,
+    rest: caddies.filter(c => c.status === 'rest').length
+  }), [caddies]);
 
   const statusMap = {
     idle: { text: '空闲', className: 'idle' },
@@ -22,25 +26,16 @@ const CaddiePage: React.FC = () => {
     rest: { text: '休息中', className: 'rest' }
   };
 
-  const filteredList = filter === 'all' ? list : list.filter(c => c.status === filter);
+  const filteredList = filter === 'all'
+    ? caddies
+    : caddies.filter(c => c.status === filter);
 
-  const handleAssign = (caddie: Caddie) => {
-    if (caddie.status !== 'idle') {
-      Taro.showToast({ title: '该球童暂不可指派', icon: 'none' });
-      return;
-    }
-    Taro.showModal({
-      title: '指派球童',
-      content: `确定指派 ${caddie.name} 吗？`,
-      success: (res) => {
-        if (res.confirm) {
-          setList(prev => prev.map(c =>
-            c.id === caddie.id ? { ...c, status: 'working' as const, todayRounds: c.todayRounds + 1 } : c
-          ));
-          Taro.showToast({ title: '指派成功', icon: 'success' });
-        }
-      }
-    });
+  const getCurrentBooking = (caddieId: string) => {
+    return bookings.find(b => b.caddieId === caddieId && b.status !== 'cancelled' && b.status !== 'completed');
+  };
+
+  const handleViewDetail = (bookingId: string) => {
+    Taro.navigateTo({ url: `/pages/booking-detail/index?id=${bookingId}` });
   };
 
   const tabs = [
@@ -53,9 +48,9 @@ const CaddiePage: React.FC = () => {
   return (
     <View className={styles.container}>
       <View className={styles.statsBar}>
-        <StatCard value={idleCount} label="空闲球童" theme="primary" />
-        <StatCard value={workingCount} label="工作中" theme="warning" />
-        <StatCard value={restCount} label="休息中" theme="info" />
+        <StatCard value={stats.idle} label="空闲球童" theme="primary" />
+        <StatCard value={stats.working} label="工作中" theme="warning" />
+        <StatCard value={stats.rest} label="休息中" theme="info" />
       </View>
 
       <View className={styles.filterTabs}>
@@ -74,6 +69,7 @@ const CaddiePage: React.FC = () => {
         {filteredList.length > 0 ? (
           filteredList.map(caddie => {
             const status = statusMap[caddie.status];
+            const currentBooking = getCurrentBooking(caddie.id);
             return (
               <View key={caddie.id} className={styles.caddieCard}>
                 <Image className={styles.avatar} src={caddie.avatar} mode="aspectFill" />
@@ -87,7 +83,7 @@ const CaddiePage: React.FC = () => {
                   <View className={styles.stats}>
                     <View className={styles.stat}>
                       <Text>评分</Text>
-                      <Text className={styles.statValue}>⭐ {caddie.rating}</Text>
+                      <Text className={styles.statValue}>⭐ {caddie.rating.toFixed(1)}</Text>
                     </View>
                     <View className={styles.stat}>
                       <Text>总场次</Text>
@@ -98,17 +94,23 @@ const CaddiePage: React.FC = () => {
                       <Text className={styles.statValue}>{caddie.todayRounds}场</Text>
                     </View>
                   </View>
+                  {currentBooking && (
+                    <View
+                      className={styles.currentBooking}
+                      onClick={() => handleViewDetail(currentBooking.id)}
+                    >
+                      <Text className={styles.bookingLabel}>当前服务：</Text>
+                      <Text className={styles.bookingText}>
+                        {currentBooking.courseName} {currentBooking.startTime}-{currentBooking.endTime}
+                      </Text>
+                      <Text className={styles.bookingArrow}>›</Text>
+                    </View>
+                  )}
                   <View className={styles.statusRow}>
                     <View className={classnames(styles.status, styles[status.className])}>
                       <View className={styles.statusDot} />
                       <Text>{status.text}</Text>
                     </View>
-                    <Button
-                      className={classnames(styles.assignBtn, caddie.status !== 'idle' && styles.disabled)}
-                      onClick={() => handleAssign(caddie)}
-                    >
-                      指派
-                    </Button>
                   </View>
                 </View>
               </View>

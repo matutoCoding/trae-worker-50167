@@ -118,3 +118,74 @@
   color: $color-error;
   padding: $spacing-sm 0;
 }
+
+.generateInfo {
+  padding: $spacing-md;
+  background: rgba(255, 152, 0, 0.06);
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+}
+
+.generateInfoText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.generateBtn {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.skippedList {
+  margin-top: $spacing-md;
+  padding: $spacing-md;
+  background: rgba(244, 67, 54, 0.06);
+  border-radius: $radius-md;
+}
+
+.skippedTitle {
+  font-size: $font-size-sm;
+  color: $color-error;
+  font-weight: $font-weight-medium;
+  margin-bottom: $spacing-sm;
+}
+
+.skippedTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.skippedTag {
+  padding: $spacing-xs $spacing-sm;
+  background: rgba(244, 67, 54, 0.12);
+  border-radius: 20rpx;
+  font-size: $font-size-xs;
+  color: $color-error;
+}
+
+.generateSummary {
+  margin-top: $spacing-md;
+  padding: $spacing-md;
+  background: rgba(46, 125, 50, 0.06);
+  border-radius: $radius-md;
+}
+
+.generateSummaryText {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}

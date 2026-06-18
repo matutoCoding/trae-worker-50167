@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, Image, ScrollView } from '@tarojs/components';
 import Taro, { usePullDownRefresh } from '@tarojs/taro';
 import { useAppStore } from '@/store/appStore';
 import { currentMember } from '@/data/members';
 import { courses } from '@/data/courses';
 import { getTodayDate, getWeekdayName, getWeekday, getNowTime } from '@/utils/date';
-import BookingCard from '@/components/BookingCard';
+import { BookingStatusText, QueuePriorityText } from '@/types';
+import Tag from '@/components/Tag';
 import styles from './index.module.scss';
 
 const HomePage: React.FC = () => {
@@ -17,7 +18,8 @@ const HomePage: React.FC = () => {
 
   const sortedQueue = getSortedQueue();
   const calledQueue = getCalledQueue();
-  const todayBookings = bookings.filter((b) => b.date === getTodayDate() && b.status !== 'cancelled');
+  const todayDate = getTodayDate();
+  const todayBookings = bookings.filter((b) => b.date === todayDate && b.status !== 'cancelled');
   const today = new Date();
   const availableCount = courses.filter((c) => c.status === 'available').length;
 
@@ -55,7 +57,45 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const upcomingBookings = todayBookings.slice(0, 2);
+  const handleViewBooking = (bookingId: string) => {
+    Taro.navigateTo({ url: `/pages/booking-detail/index?id=${bookingId}` });
+  };
+
+  const queueStats = useMemo(() => ({
+    urgent: sortedQueue.filter((q) => q.priority === 'urgent').length,
+    vip: sortedQueue.filter((q) => q.priority === 'vip').length,
+    normal: sortedQueue.filter((q) => q.priority === 'normal').length
+  }), [sortedQueue]);
+
+  const playingBookings = useMemo(() => {
+    return todayBookings
+      .filter((b) => b.status === 'playing')
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }, [todayBookings]);
+
+  const upcomingBookings = useMemo(() => {
+    const now = getNowTime();
+    return todayBookings
+      .filter((b) => b.status === 'confirmed' && b.startTime > now)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))
+      .slice(0, 4);
+  }, [todayBookings]);
+
+  const courseOccupancy = useMemo(() => {
+    return courses.map((course) => {
+      const courseBookings = todayBookings.filter(
+        (b) => b.courseId === course.id && b.status !== 'cancelled' && b.status !== 'completed'
+      );
+      return {
+        course,
+        bookings: courseBookings.sort((a, b) => a.startTime.localeCompare(b.startTime))
+      };
+    });
+  }, [todayBookings]);
+
+  const formatTimeRange = (start: string, end: string) => {
+    return `${start}-${end}`;
+  };
 
   return (
     <ScrollView className={styles.container} scrollY enhanced showScrollbar={false}>
@@ -64,7 +104,7 @@ const HomePage: React.FC = () => {
           <View className={styles.left}>
             <Image className={styles.avatar} src={currentMember.avatar} mode="aspectFill" />
             <View className={styles.greeting}>
-              <Text className={styles.hello}>早上好，欢迎回来</Text>
+              <Text className={styles.hello}>今日运营概览</Text>
               <View className={styles.name}>
                 <Text>{currentMember.name}</Text>
                 {currentMember.isVip && <View className={styles.vipBadge}>VIP</View>}
@@ -72,7 +112,7 @@ const HomePage: React.FC = () => {
             </View>
           </View>
           <View className={styles.dateInfo}>
-            <Text>{getTodayDate()}</Text>
+            <Text>{todayDate}</Text>
             <Text style={{ display: 'block' }}>{getWeekdayName(getWeekday(today))} · {currentTime}</Text>
           </View>
         </View>
@@ -91,8 +131,8 @@ const HomePage: React.FC = () => {
             <Text className={styles.statLabel}>排队中</Text>
           </View>
           <View className={styles.statItem}>
-            <Text className={styles.statValue}>{currentMember.totalBookings}</Text>
-            <Text className={styles.statLabel}>累计打球</Text>
+            <Text className={styles.statValue}>{playingBookings.length}</Text>
+            <Text className={styles.statLabel}>进行中</Text>
           </View>
         </View>
       </View>
@@ -113,6 +153,10 @@ const HomePage: React.FC = () => {
               <View className={`${styles.actionIcon} ${styles.warning}`}>🎫</View>
               <Text className={styles.actionLabel}>排队叫号</Text>
             </View>
+            <View className={styles.actionItem} onClick={() => handleAction('caddie')}>
+              <View className={styles.actionIcon}>🧑‍🌾</View>
+              <Text className={styles.actionLabel}>球童派单</Text>
+            </View>
             <View className={styles.actionItem} onClick={() => handleAction('vip')}>
               <View className={`${styles.actionIcon} ${styles.vip}`}>⭐</View>
               <Text className={styles.actionLabel}>VIP插队</Text>
@@ -120,10 +164,6 @@ const HomePage: React.FC = () => {
             <View className={styles.actionItem} onClick={() => handleAction('urgent')}>
               <View className={`${styles.actionIcon} ${styles.warning}`}>🚨</View>
               <Text className={styles.actionLabel}>应急处理</Text>
-            </View>
-            <View className={styles.actionItem} onClick={() => handleAction('caddie')}>
-              <View className={styles.actionIcon}>🧑‍🌾</View>
-              <Text className={styles.actionLabel}>球童派单</Text>
             </View>
             <View className={styles.actionItem} onClick={() => handleAction('history')}>
               <View className={`${styles.actionIcon} ${styles.info}`}>📋</View>
@@ -136,57 +176,164 @@ const HomePage: React.FC = () => {
           </View>
         </View>
 
-        <View className={styles.queueSection}>
-          <View className={styles.queueHeader}>
-            <Text className={styles.sectionTitle}>实时叫号</Text>
-            <Text className={styles.queueCount}>
-              排队 <Text className={styles.highlight}>{sortedQueue.length}</Text> 人
+        <View className={styles.section}>
+          <View className={styles.sectionHeader}>
+            <Text className={styles.sectionTitle}>等待队列汇总</Text>
+            <Text
+              className={styles.viewAll}
+              onClick={() => Taro.switchTab({ url: '/pages/queue/index' })}
+            >
+              查看队列 ›
             </Text>
           </View>
-
-          {calledQueue.length > 0 && (
-            <View className={styles.currentNumber}>
-              <View className={styles.currentLeft}>
-                <View className={styles.currentIcon}>📢</View>
-                <View className={styles.currentInfo}>
-                  <Text className={styles.currentLabel}>当前叫号</Text>
-                  <Text className={styles.currentValue}>{calledQueue[0].number}号</Text>
-                </View>
-              </View>
-              <View className={styles.currentRight}>
-                <Text className={styles.currentName}>{calledQueue[0].memberName}</Text>
-                <Text className={styles.currentTime}>{calledQueue[0].courseName}</Text>
+          <View className={styles.queueSummary}>
+            <View className={styles.queueCard}>
+              <View className={`${styles.queueDot} ${styles.urgent}`} />
+              <View className={styles.queueInfo}>
+                <Text className={styles.queueLabel}>应急</Text>
+                <Text className={styles.queueCount}>{queueStats.urgent}人</Text>
               </View>
             </View>
-          )}
-
-          {sortedQueue.length > 0 && (
-            <View className={styles.nextUp}>
-              <Text className={styles.nextLabel}>下一位</Text>
-              <View className={styles.nextItem}>
-                <Text className={styles.nextNumber}>{sortedQueue[0].number}号 · {sortedQueue[0].memberName}</Text>
-                <Text className={styles.nextInfo}>预计 {sortedQueue[0].estimatedTime}</Text>
+            <View className={styles.queueCard}>
+              <View className={`${styles.queueDot} ${styles.vip}`} />
+              <View className={styles.queueInfo}>
+                <Text className={styles.queueLabel}>VIP</Text>
+                <Text className={styles.queueCount}>{queueStats.vip}人</Text>
               </View>
+            </View>
+            <View className={styles.queueCard}>
+              <View className={`${styles.queueDot} ${styles.normal}`} />
+              <View className={styles.queueInfo}>
+                <Text className={styles.queueLabel}>普通</Text>
+                <Text className={styles.queueCount}>{queueStats.normal}人</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View className={styles.section}>
+          <View className={styles.sectionHeader}>
+            <Text className={styles.sectionTitle}>当前正在打球</Text>
+            <Text className={styles.sectionSubtitle}>{playingBookings.length} 场进行中</Text>
+          </View>
+          {playingBookings.length > 0 ? (
+            <View className={styles.bookingList}>
+              {playingBookings.map((booking) => (
+                <View
+                  key={booking.id}
+                  className={styles.bookingItem}
+                  onClick={() => handleViewBooking(booking.id)}
+                >
+                  <View className={styles.bookingTime}>
+                    <Text className={styles.bookingTimeText}>{booking.startTime}</Text>
+                    <View className={styles.bookingTimeLine} />
+                    <Text className={styles.bookingTimeText}>{booking.endTime}</Text>
+                  </View>
+                  <View className={styles.bookingContent}>
+                    <View className={styles.bookingHeader}>
+                      <Text className={styles.bookingMember}>{booking.memberName}</Text>
+                      <Tag type="playing">{BookingStatusText[booking.status]}</Tag>
+                    </View>
+                    <View className={styles.bookingMeta}>
+                      <Text>{booking.courseName} · {booking.playerCount}人</Text>
+                      {booking.caddieName && (
+                        <Text className={styles.bookingCaddie}>🧑‍🌾 {booking.caddieName}</Text>
+                      )}
+                    </View>
+                  </View>
+                  <Text className={styles.bookingArrow}>›</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View className={styles.emptySection}>
+              <Text>暂无进行中的预订</Text>
             </View>
           )}
         </View>
 
-        <View className={styles.bookingSection}>
-          <View className={styles.bookingHeader}>
-            <Text className={styles.sectionTitle}>今日预订</Text>
-            <Text className={styles.viewAll} onClick={() => Taro.switchTab({ url: '/pages/booking/index' })}>
-              查看全部
-            </Text>
+        <View className={styles.section}>
+          <View className={styles.sectionHeader}>
+            <Text className={styles.sectionTitle}>即将开球</Text>
+            <Text className={styles.sectionSubtitle}>按时间排序</Text>
           </View>
           {upcomingBookings.length > 0 ? (
-            upcomingBookings.map(booking => (
-              <BookingCard key={booking.id} booking={booking} />
-            ))
+            <View className={styles.bookingList}>
+              {upcomingBookings.map((booking) => (
+                <View
+                  key={booking.id}
+                  className={styles.bookingItem}
+                  onClick={() => handleViewBooking(booking.id)}
+                >
+                  <View className={styles.bookingTime}>
+                    <Text className={styles.bookingTimeTextUpcoming}>{booking.startTime}</Text>
+                  </View>
+                  <View className={styles.bookingContent}>
+                    <View className={styles.bookingHeader}>
+                      <Text className={styles.bookingMember}>{booking.memberName}</Text>
+                      {booking.isVip && <Tag type="vip">VIP</Tag>}
+                    </View>
+                    <View className={styles.bookingMeta}>
+                      <Text>{booking.courseName} · {booking.playerCount}人</Text>
+                    </View>
+                  </View>
+                  <Text className={styles.bookingArrow}>›</Text>
+                </View>
+              ))}
+            </View>
           ) : (
-            <View style={{ padding: '32rpx 0', textAlign: 'center', color: '#86909C' }}>
-              今日暂无预订
+            <View className={styles.emptySection}>
+              <Text>暂无即将开球的预订</Text>
             </View>
           )}
+        </View>
+
+        <View className={styles.section}>
+          <View className={styles.sectionHeader}>
+            <Text className={styles.sectionTitle}>各球道今日占用</Text>
+            <Text className={styles.sectionSubtitle}>点击查看详情</Text>
+          </View>
+          <View className={styles.courseList}>
+            {courseOccupancy.map(({ course, bookings: courseBookings }) => (
+              <View key={course.id} className={styles.courseCard}>
+                <View className={styles.courseHeader}>
+                  <Text className={styles.courseName}>{course.name}</Text>
+                  <Text
+                    className={styles.courseStatus}
+                    style={{
+                      color: course.status === 'available' ? '#2E7D32' : '#757575'
+                    }}
+                  >
+                    {course.status === 'available' ? '空闲' : '维护中'}
+                  </Text>
+                </View>
+                {courseBookings.length > 0 ? (
+                  <View className={styles.timeSlotList}>
+                    {courseBookings.map((booking) => (
+                      <View
+                        key={booking.id}
+                        className={classnames(
+                          styles.timeSlot,
+                          booking.status === 'playing' && styles.timeSlotPlaying,
+                          booking.status === 'cancelled' && styles.timeSlotCancelled
+                        )}
+                        onClick={() => handleViewBooking(booking.id)}
+                      >
+                        <Text className={styles.timeSlotText}>
+                          {formatTimeRange(booking.startTime, booking.endTime)}
+                        </Text>
+                        <Text className={styles.timeSlotMember}>{booking.memberName}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <View className={styles.courseEmpty}>
+                    <Text>今日暂无预订</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
         </View>
       </View>
     </ScrollView>

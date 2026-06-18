@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, Button, Picker } from '@tarojs/components';
+import { View, Text, Button, Picker, Image, ScrollView } from '@tarojs/components';
 import Taro, { useLoad } from '@tarojs/taro';
 import classnames from 'classnames';
 import { useAppStore } from '@/store/appStore';
 import { BookingStatusText, type BookingStatus } from '@/types';
+import { getCaddieLevelName } from '@/data/members';
 import Tag from '@/components/Tag';
 import styles from './index.module.scss';
 
@@ -15,10 +16,13 @@ const BookingDetailPage: React.FC = () => {
   const [startTime, setStartTime] = useState<string>('');
   const [endTime, setEndTime] = useState<string>('');
   const [playerCount, setPlayerCount] = useState<number>(2);
+  const [caddieId, setCaddieId] = useState<string | undefined>(undefined);
 
   const bookings = useAppStore((s) => s.bookings);
   const updateBooking = useAppStore((s) => s.updateBooking);
   const cancelBooking = useAppStore((s) => s.cancelBooking);
+  const caddies = useAppStore((s) => s.caddies);
+  const getIdleCaddies = useAppStore((s) => s.getIdleCaddies);
 
   const booking = useMemo(() => bookings.find((b) => b.id === bookingId), [bookings, bookingId]);
 
@@ -35,10 +39,13 @@ const BookingDetailPage: React.FC = () => {
       setStartTime(booking.startTime);
       setEndTime(booking.endTime);
       setPlayerCount(booking.playerCount);
+      setCaddieId(booking.caddieId);
     }
   }, [booking?.id]);
 
   const editable = booking && (booking.status === 'pending' || booking.status === 'confirmed');
+  const idleCaddies = getIdleCaddies();
+  const currentCaddie = booking?.caddieId ? caddies.find((c) => c.id === booking.caddieId) : null;
 
   const handleSave = () => {
     if (!booking) return;
@@ -46,7 +53,13 @@ const BookingDetailPage: React.FC = () => {
       Taro.showToast({ title: '开始时间需早于结束时间', icon: 'none' });
       return;
     }
-    const ok = updateBooking(booking.id, { date, startTime, endTime, playerCount });
+    const ok = updateBooking(booking.id, {
+      date,
+      startTime,
+      endTime,
+      playerCount,
+      caddieId: caddieId || undefined
+    });
     if (ok) {
       Taro.showToast({ title: '修改已保存', icon: 'success' });
     } else {
@@ -116,14 +129,6 @@ const BookingDetailPage: React.FC = () => {
               <Text>{booking.createdAt}</Text>
             </View>
           </View>
-          {booking.caddieName && (
-            <View className={styles.formItem}>
-              <Text className={styles.formLabel}>指派球童</Text>
-              <View className={styles.formValueReadonly}>
-                <Text>{booking.caddieName}</Text>
-              </View>
-            </View>
-          )}
         </View>
 
         <Text className={styles.sectionTitle}>{editable ? '修改打球安排' : '打球安排'}</Text>
@@ -187,6 +192,103 @@ const BookingDetailPage: React.FC = () => {
                   <Text>{booking.playerCount}人</Text>
                 </View>
               </View>
+            </>
+          )}
+        </View>
+
+        <Text className={styles.sectionTitle}>{editable ? '选择球童' : '指派球童'}</Text>
+        <View className={styles.formCard}>
+          {editable ? (
+            <>
+              {idleCaddies.length === 0 && !currentCaddie && (
+                <View className={styles.emptyCaddie}>
+                  <Text>暂无空闲球童</Text>
+                </View>
+              )}
+              {currentCaddie && (
+                <View className={styles.caddieList}>
+                  <View
+                    className={classnames(styles.caddieOption, {
+                      [styles.selected]: caddieId === currentCaddie.id
+                    })}
+                    onClick={() => setCaddieId(currentCaddie.id)}
+                  >
+                    <Image className={styles.caddieAvatar} src={currentCaddie.avatar} mode="aspectFill" />
+                    <View className={styles.caddieInfo}>
+                      <Text className={styles.caddieName}>
+                        {currentCaddie.name}
+                        <Text className={classnames(styles.caddieLevel, styles[currentCaddie.level])}>{getCaddieLevelName(currentCaddie.level)}</Text>
+                      </Text>
+                      <View className={styles.caddieMeta}>
+                        <Text>评分 {currentCaddie.rating.toFixed(1)}</Text>
+                        <Text>已服务 {currentCaddie.totalRounds} 场</Text>
+                        <Text>今日 {currentCaddie.todayRounds} 场</Text>
+                      </View>
+                    </View>
+                    {caddieId === currentCaddie.id && <View className={styles.checkIcon}>✓</View>}
+                  </View>
+                </View>
+              )}
+              {idleCaddies.length > 0 && (
+                <View className={styles.caddieList}>
+                  {idleCaddies.map((caddie) => (
+                    <View
+                      key={caddie.id}
+                      className={classnames(styles.caddieOption, {
+                        [styles.selected]: caddieId === caddie.id
+                      })}
+                      onClick={() => setCaddieId(caddie.id)}
+                    >
+                      <Image className={styles.caddieAvatar} src={caddie.avatar} mode="aspectFill" />
+                      <View className={styles.caddieInfo}>
+                        <Text className={styles.caddieName}>
+                          {caddie.name}
+                          <Text className={classnames(styles.caddieLevel, styles[caddie.level])}>{getCaddieLevelName(caddie.level)}</Text>
+                        </Text>
+                        <View className={styles.caddieMeta}>
+                          <Text>评分 {caddie.rating.toFixed(1)}</Text>
+                          <Text>已服务 {caddie.totalRounds} 场</Text>
+                          <Text>今日 {caddie.todayRounds} 场</Text>
+                        </View>
+                      </View>
+                      {caddieId === caddie.id && <View className={styles.checkIcon}>✓</View>}
+                    </View>
+                  ))}
+                </View>
+              )}
+              {caddieId && (
+                <View
+                  className={styles.formItem}
+                  onClick={() => setCaddieId(undefined)}
+                >
+                  <Text className={styles.formLabel}>取消指派</Text>
+                  <View className={styles.formValue}>
+                    <Text style={{ color: 'var(--color-error, #f44336)' }}>不指派球童</Text>
+                    <Text className={styles.arrow}>›</Text>
+                  </View>
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              {currentCaddie ? (
+                <View className={styles.formItem}>
+                  <Text className={styles.formLabel}>球童</Text>
+                  <View className={styles.formValueReadonly}>
+                    <Image className={styles.caddieAvatar} src={currentCaddie.avatar} mode="aspectFill" />
+                    <View style={{ marginLeft: 24 }}>
+                      <Text style={{ fontWeight: 600 }}>{currentCaddie.name}</Text>
+                      <Text style={{ color: 'var(--color-text-secondary, #757575)', fontSize: 24 }}>
+                        {getCaddieLevelName(currentCaddie.level)} · 评分 {currentCaddie.rating.toFixed(1)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ) : (
+                <View className={styles.emptyCaddie}>
+                  <Text>暂未指派球童</Text>
+                </View>
+              )}
             </>
           )}
         </View>
