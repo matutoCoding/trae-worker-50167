@@ -214,9 +214,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       return false;
     }
 
-    if (patch.caddieId !== undefined && patch.caddieId !== current.caddieId) {
+    if ('caddieId' in patch && patch.caddieId !== current.caddieId) {
       const nextCaddieId = patch.caddieId;
       const prevCaddieId = current.caddieId;
+      const nextCaddie = nextCaddieId ? get().caddies.find((c) => c.id === nextCaddieId) : null;
       set((state) => {
         let nextCaddies = [...state.caddies];
         if (prevCaddieId) {
@@ -231,7 +232,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
         return {
           caddies: nextCaddies,
-          bookings: state.bookings.map((b) => (b.id === id ? { ...b, ...patch } : b))
+          bookings: state.bookings.map((b) => (b.id === id ? {
+            ...b,
+            ...patch,
+            caddieName: nextCaddie?.name
+          } : b))
         };
       });
       return true;
@@ -258,7 +263,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       return {
         caddies: nextCaddies,
         bookings: state.bookings.map((b) =>
-          b.id === id ? { ...b, status: 'cancelled' as const } : b
+          b.id === id ? {
+            ...b,
+            status: 'cancelled' as const,
+            caddieId: undefined,
+            caddieName: undefined
+          } : b
         )
       };
     });
@@ -353,10 +363,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     let startD = parseDate(rule.startDate);
+    const ruleEndD = parseDate(rule.endDate);
     const toD = parseDate(toDate);
     if (startD < today) startD = today;
-    if (toD < startD) {
-      console.warn('[Cycle] 结束日期早于开始日期', { startD, toD });
+    let endD = new Date(toD);
+    if (endD > ruleEndD) endD = new Date(ruleEndD);
+    if (endD < startD) {
+      console.warn('[Cycle] 结束日期早于开始日期', { startD, endD, ruleEndD });
       return { success: 0, skipped: [], total: 0 };
     }
 
@@ -369,13 +382,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const successDates: string[] = [];
     const skippedDates: string[] = [];
+    const matchedDates: string[] = [];
 
     let current = new Date(startD);
-    const endD = new Date(toD);
 
     while (current <= endD) {
       const dateStr = formatDate(current);
       if (getWeekday(dateStr) === rule.weekday) {
+        matchedDates.push(dateStr);
         const hasConflict = computeBookingConflict(
           get().bookings,
           rule.courseId,
@@ -416,7 +430,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const result = {
       success: successDates.length,
       skipped: skippedDates,
-      total: successDates.length + skippedDates.length
+      total: matchedDates.length
     };
 
     if (successDates.length > 0) {

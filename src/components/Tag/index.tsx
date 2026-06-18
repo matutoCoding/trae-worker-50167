@@ -4,7 +4,7 @@ import classnames from 'classnames';
 import styles from './index.module.scss';
 
 export interface TagProps {
-  type?: 'success' | 'warning' | 'error' | 'info' | 'vip' | 'urgent' | 'primary' | 'default';
+  type?: 'success' | 'warning' | 'error' | 'info' | 'vip' | 'urgent' | 'primary' | 'default' | 'playing';
   children: React.ReactNode;
 }
 

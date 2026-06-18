@@ -5,7 +5,7 @@ import { useAppStore } from '@/store/appStore';
 import { currentMember } from '@/data/members';
 import { courses } from '@/data/courses';
 import { getTodayDate, getWeekdayName, getWeekday, getNowTime } from '@/utils/date';
-import { BookingStatusText, QueuePriorityText } from '@/types';
+import { BookingStatusText } from '@/types';
 import Tag from '@/components/Tag';
 import styles from './index.module.scss';
 

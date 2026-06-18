@@ -49,4 +49,9 @@
     background: $color-bg-hover;
     color: $color-text-secondary;
   }
+
+  &.playing {
+    background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+    color: $color-text-white;
+  }
 }

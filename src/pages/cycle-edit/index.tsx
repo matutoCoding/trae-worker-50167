@@ -123,9 +123,25 @@ const CycleEditPage: React.FC = () => {
       Taro.showToast({ title: '生成日期不能早于规则开始日期', icon: 'none' });
       return;
     }
+    if (generateToDate > endDate) {
+      Taro.showModal({
+        title: '提示',
+        content: `生成截止日（${generateToDate}）超出规则有效期（至 ${endDate}），将最多生成到 ${endDate}，是否继续？`,
+        success: (res) => {
+          if (res.confirm) {
+            doGenerate();
+          }
+        }
+      });
+      return;
+    }
+    doGenerate();
+  };
+
+  const doGenerate = () => {
     Taro.showModal({
       title: '生成未来预订',
-      content: `将生成从今天到 ${generateToDate} 的所有周期时段预订，确定继续吗？`,
+      content: `将生成从今天到 ${generateToDate > endDate ? endDate : generateToDate} 的所有周期时段预订，确定继续吗？`,
       success: (res) => {
         if (res.confirm) {
           const result = generateBookingsFromCycle(editId, generateToDate);
@@ -141,9 +157,14 @@ const CycleEditPage: React.FC = () => {
               icon: 'none',
               duration: 2500
             });
-          } else {
+          } else if (result.total > 0) {
             Taro.showToast({
               title: '所选日期均已被占用',
+              icon: 'none'
+            });
+          } else {
+            Taro.showToast({
+              title: '没有可生成的时段',
               icon: 'none'
             });
           }
