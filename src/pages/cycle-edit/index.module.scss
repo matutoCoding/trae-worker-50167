@@ -2,36 +2,119 @@
 
 .container {
   min-height: 100vh;
-  padding: $spacing-xl $page-padding;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  padding: $spacing-md $page-padding 200rpx;
 }
 
-.icon {
-  width: 200rpx;
-  height: 200rpx;
-  border-radius: $radius-round;
-  background: $color-primary-bg;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 100rpx;
-  margin-bottom: $spacing-xl;
+.formCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xs $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
 }
 
-.title {
-  font-size: $font-size-xl;
-  font-weight: $font-weight-semibold;
+.formItem {
+  display: flex;
+  align-items: center;
+  padding: $spacing-lg 0;
+  border-bottom: 1rpx solid $color-divider;
+  min-height: 96rpx;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.formLabel {
+  width: 180rpx;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.formValue {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-xs;
+  font-size: $font-size-md;
   color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.placeholder {
+  color: $color-text-disabled;
+  font-weight: $font-weight-normal;
+}
+
+.arrow {
+  color: $color-text-tertiary;
+  font-size: $font-size-md;
+  margin-left: $spacing-xs;
+}
+
+.sectionTitle {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  padding: $spacing-sm 0 $spacing-xs;
+}
+
+.previewCard {
+  background: linear-gradient(135deg, rgba(46, 125, 50, 0.06) 0%, rgba(76, 175, 80, 0.1) 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
   margin-bottom: $spacing-md;
 }
 
-.desc {
+.previewTitle {
   font-size: $font-size-md;
-  color: $color-text-tertiary;
-  text-align: center;
-  max-width: 500rpx;
-  line-height: 1.6;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.previewText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.7;
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc(#{$spacing-md} + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+.submitBtn {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.danger {
+    background: linear-gradient(135deg, #FF7043 0%, #F44336 100%);
+  }
+}
+
+.errorText {
+  font-size: $font-size-sm;
+  color: $color-error;
+  padding: $spacing-sm 0;
 }

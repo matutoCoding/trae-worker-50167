@@ -2,36 +2,200 @@
 
 .container {
   min-height: 100vh;
+  padding: 0 0 200rpx;
+}
+
+.statusHeader {
   padding: $spacing-xl $page-padding;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  color: $color-text-white;
+  position: relative;
+  overflow: hidden;
+
+  &.confirmed {
+    background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  }
+
+  &.pending {
+    background: linear-gradient(135deg, #FF9800 0%, #FB8C00 100%);
+  }
+
+  &.playing {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
+  }
+
+  &.completed {
+    background: linear-gradient(135deg, #757575 0%, #616161 100%);
+  }
+
+  &.cancelled {
+    background: linear-gradient(135deg, #BDBDBD 0%, #9E9E9E 100%);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -60rpx;
+    top: -60rpx;
+    width: 240rpx;
+    height: 240rpx;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+  }
 }
 
-.icon {
-  width: 200rpx;
-  height: 200rpx;
-  border-radius: $radius-round;
-  background: $color-primary-bg;
+.statusRow {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 100rpx;
-  margin-bottom: $spacing-xl;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
 }
 
-.title {
+.statusText {
   font-size: $font-size-xl;
-  font-weight: $font-weight-semibold;
-  color: $color-text-primary;
-  margin-bottom: $spacing-md;
+  font-weight: $font-weight-bold;
 }
 
-.desc {
-  font-size: $font-size-md;
+.tagRow {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.courseTitle {
+  font-size: $font-size-lg;
+  margin-top: $spacing-xs;
+  position: relative;
+  z-index: 1;
+  opacity: 0.95;
+}
+
+.body {
+  padding: $spacing-md $page-padding 0;
+}
+
+.sectionTitle {
+  font-size: $font-size-sm;
   color: $color-text-tertiary;
-  text-align: center;
-  max-width: 500rpx;
+  padding: $spacing-sm 0 $spacing-xs;
+}
+
+.formCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xs $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.formItem {
+  display: flex;
+  align-items: center;
+  padding: $spacing-lg 0;
+  border-bottom: 1rpx solid $color-divider;
+  min-height: 96rpx;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.formLabel {
+  width: 180rpx;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.formValue {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-xs;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.formValueReadonly {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-xs;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  font-weight: $font-weight-normal;
+}
+
+.arrow {
+  color: $color-text-tertiary;
+  font-size: $font-size-md;
+  margin-left: $spacing-xs;
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc(#{$spacing-md} + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+.btn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.save {
+    flex: 2;
+    background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+    color: $color-text-white;
+  }
+
+  &.cancel {
+    background: rgba(244, 67, 54, 0.08);
+    color: $color-error;
+    border: 2rpx solid rgba(244, 67, 54, 0.3);
+  }
+
+  &.disabled {
+    opacity: 0.5;
+  }
+}
+
+.noticeCard {
+  background: rgba(255, 152, 0, 0.08);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  display: flex;
+  gap: $spacing-sm;
+  align-items: flex-start;
+}
+
+.noticeIcon {
+  font-size: 32rpx;
+  flex-shrink: 0;
+}
+
+.noticeText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
   line-height: 1.6;
 }

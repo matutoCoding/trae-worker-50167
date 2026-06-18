@@ -145,6 +145,31 @@
   margin-top: 4rpx;
 }
 
+.callNextBtn {
+  @include button-reset;
+  width: 100%;
+  height: 80rpx;
+  border-radius: $radius-button;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2rpx solid rgba(255, 255, 255, 0.4);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-md;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+
+  &:active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.98);
+  }
+
+  &.disabled {
+    opacity: 0.5;
+  }
+}
+
 .content {
   padding: $spacing-md $page-padding 0;
 }

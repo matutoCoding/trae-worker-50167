@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, Button, ScrollView } from '@tarojs/components';
 import Taro, { usePullDownRefresh } from '@tarojs/taro';
 import classnames from 'classnames';
-import { getSortedQueue, getCalledQueue } from '@/data/queue';
+import { useAppStore } from '@/store/appStore';
 import { getNowTime } from '@/utils/date';
+import type { QueuePriority } from '@/types';
 import QueueItemComp from '@/components/QueueItem';
 import EmptyState from '@/components/EmptyState';
 import styles from './index.module.scss';
@@ -11,6 +12,12 @@ import styles from './index.module.scss';
 const QueuePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'waiting' | 'called'>('waiting');
   const [currentTime, setCurrentTime] = useState(getNowTime());
+
+  const getSortedQueue = useAppStore((s) => s.getSortedQueue);
+  const getCalledQueue = useAppStore((s) => s.getCalledQueue);
+  const callNext = useAppStore((s) => s.callNext);
+  const queueItems = useAppStore((s) => s.queueItems);
+
   const sortedQueue = getSortedQueue();
   const calledQueue = getCalledQueue();
 
@@ -19,24 +26,30 @@ const QueuePage: React.FC = () => {
       Taro.stopPullDownRefresh();
       setCurrentTime(getNowTime());
       Taro.showToast({ title: '刷新成功', icon: 'success' });
-    }, 1000);
+    }, 800);
   });
 
-  const urgentCount = sortedQueue.filter(q => q.priority === 'urgent').length;
-  const vipCount = sortedQueue.filter(q => q.priority === 'vip').length;
-  const normalCount = sortedQueue.filter(q => q.priority === 'normal').length;
+  const urgentCount = queueItems.filter((q) => q.priority === 'urgent' && q.status === 'waiting').length;
+  const vipCount = queueItems.filter((q) => q.priority === 'vip' && q.status === 'waiting').length;
+  const normalCount = queueItems.filter((q) => q.priority === 'normal' && q.status === 'waiting').length;
 
-  const handleTakeNumber = (priority: 'normal' | 'vip' | 'urgent') => {
+  const handleTakeNumber = (priority: QueuePriority) => {
     Taro.navigateTo({ url: `/pages/take-number/index?priority=${priority}` });
   };
 
   const handleCallNext = () => {
+    if (sortedQueue.length === 0) {
+      Taro.showToast({ title: '暂无等待队列', icon: 'none' });
+      return;
+    }
+    const next = sortedQueue[0];
     Taro.showModal({
       title: '叫号确认',
-      content: `确定叫下一位 ${sortedQueue[0]?.number}号 吗？`,
+      content: `确定叫下一位 ${next.number}号 ${next.memberName} 吗？`,
       success: (res) => {
         if (res.confirm) {
-          Taro.showToast({ title: '已叫号', icon: 'success' });
+          callNext();
+          Taro.showToast({ title: `已叫号 ${next.number}号`, icon: 'success' });
         }
       }
     });
@@ -80,6 +93,13 @@ const QueuePage: React.FC = () => {
             <Text className={styles.metaLabel}>普通排队</Text>
           </View>
         </View>
+
+        <Button
+          className={classnames(styles.callNextBtn, sortedQueue.length === 0 && styles.disabled)}
+          onClick={handleCallNext}
+        >
+          {sortedQueue.length > 0 ? `叫下一位（${sortedQueue[0].number}号）` : '暂无等待队列'}
+        </Button>
       </View>
 
       <View className={styles.content}>

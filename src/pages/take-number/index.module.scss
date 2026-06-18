@@ -2,36 +2,189 @@
 
 .container {
   min-height: 100vh;
-  padding: $spacing-xl $page-padding;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  padding: $spacing-md $page-padding 200rpx;
 }
 
-.icon {
-  width: 200rpx;
-  height: 200rpx;
-  border-radius: $radius-round;
-  background: $color-primary-bg;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 100rpx;
-  margin-bottom: $spacing-xl;
+.priorityCard {
+  border-radius: $radius-lg;
+  padding: $spacing-xl $spacing-lg;
+  margin-bottom: $spacing-md;
+  color: $color-text-white;
+  position: relative;
+  overflow: hidden;
+
+  &.normal {
+    background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  }
+
+  &.vip {
+    background: linear-gradient(135deg, #FFD54F 0%, #FFC107 100%);
+    color: #5D4037;
+  }
+
+  &.urgent {
+    background: linear-gradient(135deg, #FF5252 0%, #F44336 100%);
+  }
 }
 
-.title {
+.priorityIcon {
+  font-size: 64rpx;
+  margin-bottom: $spacing-sm;
+}
+
+.priorityTitle {
   font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-xs;
+}
+
+.priorityDesc {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.sectionTitle {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  padding: $spacing-sm 0 $spacing-xs;
+}
+
+.formCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xs $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.formItem {
+  display: flex;
+  align-items: center;
+  padding: $spacing-lg 0;
+  border-bottom: 1rpx solid $color-divider;
+  min-height: 96rpx;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.formLabel {
+  width: 180rpx;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.formValue {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-xs;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.arrow {
+  color: $color-text-tertiary;
+  font-size: $font-size-md;
+  margin-left: $spacing-xs;
+}
+
+.confirmCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.confirmTitle {
+  font-size: $font-size-md;
   font-weight: $font-weight-semibold;
   color: $color-text-primary;
   margin-bottom: $spacing-md;
 }
 
-.desc {
-  font-size: $font-size-md;
+.confirmRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-sm 0;
+}
+
+.confirmLabel {
+  font-size: $font-size-sm;
   color: $color-text-tertiary;
-  text-align: center;
-  max-width: 500rpx;
+}
+
+.confirmValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.noticeCard {
+  background: rgba(255, 152, 0, 0.08);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  display: flex;
+  gap: $spacing-sm;
+  align-items: flex-start;
+}
+
+.noticeIcon {
+  font-size: 32rpx;
+  flex-shrink: 0;
+}
+
+.noticeText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
   line-height: 1.6;
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc(#{$spacing-md} + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+.submitBtn {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-white;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.normal {
+    background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  }
+
+  &.vip {
+    background: linear-gradient(135deg, #FFD54F 0%, #FFC107 100%);
+    color: #5D4037;
+  }
+
+  &.urgent {
+    background: linear-gradient(135deg, #FF5252 0%, #F44336 100%);
+  }
 }

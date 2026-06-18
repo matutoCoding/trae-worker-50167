@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: '周期规则编辑'
+  navigationBarTitleText: '周期规则'
 })

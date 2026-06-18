@@ -2,31 +2,27 @@ import React, { useState } from 'react';
 import { View, Text, Button, ScrollView } from '@tarojs/components';
 import Taro, { usePullDownRefresh } from '@tarojs/taro';
 import classnames from 'classnames';
-import { cycleRules, getBookingsByMember } from '@/data/bookings';
+import { useAppStore } from '@/store/appStore';
 import { currentMember } from '@/data/members';
 import { getWeekdayName } from '@/utils/date';
 import BookingCard from '@/components/BookingCard';
 import Tag from '@/components/Tag';
 import EmptyState from '@/components/EmptyState';
-import type { CycleRule } from '@/types';
 import styles from './index.module.scss';
 
 const BookingPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'cycle' | 'list'>('cycle');
-  const [cycles, setCycles] = useState<CycleRule[]>(cycleRules);
+
+  const cycles = useAppStore((s) => s.cycleRules);
+  const toggleCycleRule = useAppStore((s) => s.toggleCycleRule);
+  const bookings = useAppStore((s) => s.bookings);
 
   usePullDownRefresh(() => {
     setTimeout(() => {
       Taro.stopPullDownRefresh();
       Taro.showToast({ title: '刷新成功', icon: 'success' });
-    }, 1000);
+    }, 800);
   });
-
-  const toggleCycle = (id: string) => {
-    setCycles(prev => prev.map(c =>
-      c.id === id ? { ...c, isActive: !c.isActive } : c
-    ));
-  };
 
   const handleAddCycle = () => {
     Taro.navigateTo({ url: '/pages/cycle-edit/index' });
@@ -36,7 +32,7 @@ const BookingPage: React.FC = () => {
     Taro.navigateTo({ url: `/pages/cycle-edit/index?id=${id}` });
   };
 
-  const myBookings = getBookingsByMember(currentMember.id);
+  const myBookings = bookings.filter((b) => b.memberId === currentMember.id);
 
   return (
     <View className={styles.container}>
@@ -59,7 +55,7 @@ const BookingPage: React.FC = () => {
         {activeTab === 'cycle' ? (
           <>
             {cycles.length > 0 ? (
-              cycles.map(cycle => (
+              cycles.map((cycle) => (
                 <View key={cycle.id} className={styles.cycleCard}>
                   <View className={styles.cycleHeader}>
                     <View className={styles.cycleTitle}>
@@ -68,7 +64,7 @@ const BookingPage: React.FC = () => {
                     </View>
                     <View
                       className={classnames(styles.switch, cycle.isActive && styles.active)}
-                      onClick={() => toggleCycle(cycle.id)}
+                      onClick={() => toggleCycleRule(cycle.id)}
                     />
                   </View>
 
@@ -84,7 +80,7 @@ const BookingPage: React.FC = () => {
                       <Text className={styles.infoValue}>{cycle.playerCount}人</Text>
                     </View>
                     <View className={styles.infoBlock}>
-                      <Text className={styles.infoLabel}>有效期限</Text>
+                      <Text className={styles.infoLabel}>开始日期</Text>
                       <Text className={styles.infoValue}>{cycle.startDate}</Text>
                     </View>
                     <View className={styles.infoBlock}>
@@ -120,13 +116,13 @@ const BookingPage: React.FC = () => {
             </Button>
           </>
         ) : (
-          <ScrollView scrollY>
+          <ScrollView scrollY enhanced showScrollbar={false}>
             {myBookings.length > 0 ? (
-              myBookings.map(booking => (
+              myBookings.map((booking) => (
                 <BookingCard key={booking.id} booking={booking} />
               ))
             ) : (
-              <EmptyState icon="📋" text="暂无预订记录" desc="去创建您的第一个预订吧" />
+              <EmptyState icon="📋" text="暂无预订记录" desc="去球道页立即预订吧" />
             )}
           </ScrollView>
         )}

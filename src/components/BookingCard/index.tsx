@@ -3,6 +3,7 @@ import { View, Text, Image, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import type { Booking } from '@/types';
+import { useAppStore } from '@/store/appStore';
 import Tag from '@/components/Tag';
 import styles from './index.module.scss';
 
@@ -21,6 +22,7 @@ export interface BookingCardProps {
 
 const BookingCard: React.FC<BookingCardProps> = ({ booking, showActions = true }) => {
   const status = statusMap[booking.status];
+  const cancelBooking = useAppStore((s) => s.cancelBooking);
 
   const handleDetail = () => {
     Taro.navigateTo({ url: `/pages/booking-detail/index?id=${booking.id}` });
@@ -29,9 +31,11 @@ const BookingCard: React.FC<BookingCardProps> = ({ booking, showActions = true }
   const handleCancel = () => {
     Taro.showModal({
       title: '确认取消',
-      content: '确定要取消该预订吗？',
+      content: `确定要取消该预订吗？（${booking.courseName} ${booking.date} ${booking.startTime}）`,
+      confirmColor: '#F44336',
       success: (res) => {
         if (res.confirm) {
+          cancelBooking(booking.id);
           Taro.showToast({ title: '已取消预订', icon: 'success' });
         }
       }

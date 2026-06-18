@@ -1,13 +1,222 @@
-import React from 'react';
-import { View, Text } from '@tarojs/components';
+import React, { useState } from 'react';
+import { View, Text, Button, Picker } from '@tarojs/components';
+import Taro, { useLoad } from '@tarojs/taro';
+import classnames from 'classnames';
+import { useAppStore } from '@/store/appStore';
+import { members } from '@/data/members';
+import { courses } from '@/data/courses';
+import { getWeekdayName } from '@/utils/date';
+import type { CycleRule } from '@/types';
 import styles from './index.module.scss';
 
+const WEEKDAY_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const PLAYER_OPTIONS = ['1人', '2人', '3人', '4人'];
+
 const CycleEditPage: React.FC = () => {
+  const [editId, setEditId] = useState<string>('');
+  const [memberIndex, setMemberIndex] = useState<number>(0);
+  const [courseIndex, setCourseIndex] = useState<number>(0);
+  const [weekday, setWeekday] = useState<number>(1);
+  const [startTime, setStartTime] = useState<string>('07:00');
+  const [endTime, setEndTime] = useState<string>('11:30');
+  const [startDate, setStartDate] = useState<string>('2026-06-18');
+  const [endDate, setEndDate] = useState<string>('2026-12-31');
+  const [playerCount, setPlayerCount] = useState<number>(4);
+  const [error, setError] = useState<string>('');
+
+  const addCycleRule = useAppStore((s) => s.addCycleRule);
+  const updateCycleRule = useAppStore((s) => s.updateCycleRule);
+  const getCycleRuleById = useAppStore((s) => s.getCycleRuleById);
+
+  useLoad((options) => {
+    const id = (options as { id?: string })?.id;
+    if (id) {
+      setEditId(id);
+      const rule = getCycleRuleById(id);
+      if (rule) {
+        const mIdx = Math.max(0, members.findIndex((m) => m.id === rule.memberId));
+        const cIdx = Math.max(0, courses.findIndex((c) => c.id === rule.courseId));
+        setMemberIndex(mIdx);
+        setCourseIndex(cIdx);
+        setWeekday(rule.weekday);
+        setStartTime(rule.startTime);
+        setEndTime(rule.endTime);
+        setStartDate(rule.startDate);
+        setEndDate(rule.endDate);
+        setPlayerCount(rule.playerCount);
+        Taro.setNavigationBarTitle({ title: '编辑周期规则' });
+      } else {
+        console.error('[Cycle] 未找到周期规则', id);
+      }
+    } else {
+      Taro.setNavigationBarTitle({ title: '新增周期规则' });
+    }
+  });
+
+  const validate = (): boolean => {
+    if (!members[memberIndex]) {
+      setError('请选择会员');
+      return false;
+    }
+    if (!courses[courseIndex]) {
+      setError('请选择球道');
+      return false;
+    }
+    if (startTime >= endTime) {
+      setError('开始时间需早于结束时间');
+      return false;
+    }
+    if (startDate > endDate) {
+      setError('开始日期需早于结束日期');
+      return false;
+    }
+    setError('');
+    return true;
+  };
+
+  const handleSave = () => {
+    if (!validate()) {
+      Taro.showToast({ title: error || '请检查表单', icon: 'none' });
+      return;
+    }
+    const member = members[memberIndex];
+    const course = courses[courseIndex];
+    const payload: Omit<CycleRule, 'id' | 'generatedCount' | 'totalCount'> = {
+      memberId: member.id,
+      memberName: member.name,
+      courseId: course.id,
+      courseName: course.name,
+      weekday,
+      startTime,
+      endTime,
+      startDate,
+      endDate,
+      playerCount,
+      isActive: true
+    };
+
+    if (editId) {
+      updateCycleRule(editId, payload);
+      Taro.showToast({ title: '已保存', icon: 'success' });
+    } else {
+      addCycleRule(payload);
+      Taro.showToast({ title: '已新增周期规则', icon: 'success' });
+    }
+    setTimeout(() => {
+      Taro.navigateBack();
+    }, 800);
+  };
+
+  const member = members[memberIndex];
+  const course = courses[courseIndex];
+
   return (
     <View className={styles.container}>
-      <View className={styles.icon}>📅</View>
-      <Text className={styles.title}>周期规则编辑</Text>
-      <Text className={styles.desc}>功能正在开发中...</Text>
+      <Text className={styles.sectionTitle}>基本信息</Text>
+      <View className={styles.formCard}>
+        <Picker mode="selector" range={members.map((m) => `${m.name}（${m.isVip ? 'VIP' : '普通'}）`)} value={memberIndex} onChange={(e) => setMemberIndex(Number(e.detail.value))}>
+          <View className={styles.formItem}>
+            <Text className={styles.formLabel}>会员</Text>
+            <View className={styles.formValue}>
+              <Text>{member?.name}</Text>
+              <Text className={styles.arrow}>›</Text>
+            </View>
+          </View>
+        </Picker>
+
+        <Picker mode="selector" range={courses.map((c) => c.name)} value={courseIndex} onChange={(e) => setCourseIndex(Number(e.detail.value))}>
+          <View className={styles.formItem}>
+            <Text className={styles.formLabel}>球道</Text>
+            <View className={styles.formValue}>
+              <Text>{course?.name}</Text>
+              <Text className={styles.arrow}>›</Text>
+            </View>
+          </View>
+        </Picker>
+
+        <Picker mode="selector" range={WEEKDAY_NAMES} value={weekday} onChange={(e) => setWeekday(Number(e.detail.value))}>
+          <View className={styles.formItem}>
+            <Text className={styles.formLabel}>每周</Text>
+            <View className={styles.formValue}>
+              <Text>{WEEKDAY_NAMES[weekday]}</Text>
+              <Text className={styles.arrow}>›</Text>
+            </View>
+          </View>
+        </Picker>
+      </View>
+
+      <Text className={styles.sectionTitle}>打球时段</Text>
+      <View className={styles.formCard}>
+        <Picker mode="time" value={startTime} onChange={(e) => setStartTime(e.detail.value as string)}>
+          <View className={styles.formItem}>
+            <Text className={styles.formLabel}>开始时间</Text>
+            <View className={styles.formValue}>
+              <Text>{startTime}</Text>
+              <Text className={styles.arrow}>›</Text>
+            </View>
+          </View>
+        </Picker>
+
+        <Picker mode="time" value={endTime} onChange={(e) => setEndTime(e.detail.value as string)}>
+          <View className={styles.formItem}>
+            <Text className={styles.formLabel}>结束时间</Text>
+            <View className={styles.formValue}>
+              <Text>{endTime}</Text>
+              <Text className={styles.arrow}>›</Text>
+            </View>
+          </View>
+        </Picker>
+
+        <Picker mode="selector" range={PLAYER_OPTIONS} value={playerCount - 1} onChange={(e) => setPlayerCount(Number(e.detail.value) + 1)}>
+          <View className={styles.formItem}>
+            <Text className={styles.formLabel}>打球人数</Text>
+            <View className={styles.formValue}>
+              <Text>{playerCount}人</Text>
+              <Text className={styles.arrow}>›</Text>
+            </View>
+          </View>
+        </Picker>
+      </View>
+
+      <Text className={styles.sectionTitle}>有效期</Text>
+      <View className={styles.formCard}>
+        <Picker mode="date" value={startDate} onChange={(e) => setStartDate(e.detail.value as string)}>
+          <View className={styles.formItem}>
+            <Text className={styles.formLabel}>开始日期</Text>
+            <View className={styles.formValue}>
+              <Text>{startDate}</Text>
+              <Text className={styles.arrow}>›</Text>
+            </View>
+          </View>
+        </Picker>
+
+        <Picker mode="date" value={endDate} onChange={(e) => setEndDate(e.detail.value as string)}>
+          <View className={styles.formItem}>
+            <Text className={styles.formLabel}>结束日期</Text>
+            <View className={styles.formValue}>
+              <Text>{endDate}</Text>
+              <Text className={styles.arrow}>›</Text>
+            </View>
+          </View>
+        </Picker>
+      </View>
+
+      <View className={styles.previewCard}>
+        <Text className={styles.previewTitle}>规则预览</Text>
+        <Text className={styles.previewText}>
+          {member?.name} 每周{getWeekdayName(weekday)} {startTime}-{endTime}{'\n'}
+          {course?.name} · {playerCount}人打球{'\n'}
+          有效期：{startDate} 至 {endDate}
+        </Text>
+      </View>
+
+      {error ? <Text className={styles.errorText}>{error}</Text> : null}
+
+      <View className={styles.bottomBar}>
+        <Button className={classnames(styles.submitBtn)} onClick={handleSave}>
+          {editId ? '保存修改' : '创建周期规则'}
+        </Button>
+      </View>
     </View>
   );
 };

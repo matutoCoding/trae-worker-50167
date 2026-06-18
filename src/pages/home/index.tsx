@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, ScrollView } from '@tarojs/components';
 import Taro, { usePullDownRefresh } from '@tarojs/taro';
+import { useAppStore } from '@/store/appStore';
 import { currentMember } from '@/data/members';
-import { getSortedQueue, getCalledQueue } from '@/data/queue';
-import { getBookingsByDate } from '@/data/bookings';
 import { courses } from '@/data/courses';
 import { getTodayDate, getWeekdayName, getWeekday, getNowTime } from '@/utils/date';
 import BookingCard from '@/components/BookingCard';
@@ -11,11 +10,16 @@ import styles from './index.module.scss';
 
 const HomePage: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(getNowTime());
+
+  const getSortedQueue = useAppStore((s) => s.getSortedQueue);
+  const getCalledQueue = useAppStore((s) => s.getCalledQueue);
+  const bookings = useAppStore((s) => s.bookings);
+
   const sortedQueue = getSortedQueue();
   const calledQueue = getCalledQueue();
-  const todayBookings = getBookingsByDate('2026-06-18');
+  const todayBookings = bookings.filter((b) => b.date === getTodayDate() && b.status !== 'cancelled');
   const today = new Date();
-  const availableCount = courses.filter(c => c.status === 'available').length;
+  const availableCount = courses.filter((c) => c.status === 'available').length;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -28,27 +32,26 @@ const HomePage: React.FC = () => {
     setTimeout(() => {
       Taro.stopPullDownRefresh();
       Taro.showToast({ title: '刷新成功', icon: 'success' });
-    }, 1000);
+    }, 800);
   });
 
   const handleAction = (action: string) => {
-    const routeMap: Record<string, string> = {
+    const tabMap: Record<string, string> = {
       book: '/pages/course/index',
       cycle: '/pages/booking/index',
       queue: '/pages/queue/index',
-      vip: '/pages/take-number/index',
-      urgent: '/pages/take-number/index',
-      caddie: '/pages/caddie/index',
       history: '/pages/booking/index',
       profile: '/pages/profile/index'
     };
-    const url = routeMap[action];
-    if (url) {
-      if (action === 'book' || action === 'cycle' || action === 'queue' || action === 'profile' || action === 'history') {
-        Taro.switchTab({ url });
-      } else {
-        Taro.navigateTo({ url });
-      }
+    const navMap: Record<string, string> = {
+      caddie: '/pages/caddie/index',
+      vip: '/pages/take-number/index?priority=vip',
+      urgent: '/pages/take-number/index?priority=urgent'
+    };
+    if (tabMap[action]) {
+      Taro.switchTab({ url: tabMap[action] });
+    } else if (navMap[action]) {
+      Taro.navigateTo({ url: navMap[action] });
     }
   };
 

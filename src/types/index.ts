@@ -12,6 +12,8 @@ export interface Course {
   par: number;
 }
 
+export type BookingStatus = 'pending' | 'confirmed' | 'playing' | 'completed' | 'cancelled';
+
 export interface Booking {
   id: string;
   memberId: string;
@@ -23,7 +25,7 @@ export interface Booking {
   startTime: string;
   endTime: string;
   playerCount: number;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: BookingStatus;
   isVip: boolean;
   isCycle: boolean;
   cycleId?: string;
@@ -31,6 +33,22 @@ export interface Booking {
   caddieName?: string;
   createdAt: string;
 }
+
+export const BookingStatusText: Record<BookingStatus, string> = {
+  pending: '待确认',
+  confirmed: '已确认',
+  playing: '进行中',
+  completed: '已完成',
+  cancelled: '已取消'
+};
+
+export type QueuePriority = 'normal' | 'vip' | 'urgent';
+
+export const QueuePriorityText: Record<QueuePriority, string> = {
+  normal: '普通',
+  vip: 'VIP优先',
+  urgent: '应急插队'
+};
 
 export interface CycleRule {
   id: string;
@@ -58,7 +76,7 @@ export interface QueueItem {
   courseId: string;
   courseName: string;
   status: 'waiting' | 'called' | 'playing' | 'passed';
-  priority: 'normal' | 'vip' | 'urgent';
+  priority: QueuePriority;
   playerCount: number;
   estimatedTime: string;
   joinedAt: string;
