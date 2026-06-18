@@ -1,0 +1,184 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  padding: $spacing-md $page-padding 40rpx;
+}
+
+.statsBar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.filterTabs {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xs;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.tab {
+  flex: 1;
+  padding: $spacing-sm;
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  border-radius: $radius-md;
+  transition: all $transition-base;
+  font-weight: $font-weight-medium;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.caddieCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.avatar {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: $radius-round;
+  background: $color-primary-bg;
+  flex-shrink: 0;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-xs;
+}
+
+.name {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.levelTag {
+  background: $color-primary-bg;
+  color: $color-primary;
+  padding: 2rpx 12rpx;
+  border-radius: $radius-xs;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.master {
+    background: linear-gradient(135deg, rgba(255, 213, 79, 0.2) 0%, rgba(255, 193, 7, 0.3) 100%);
+    color: #F57C00;
+  }
+
+  &.senior {
+    background: rgba(25, 118, 210, 0.1);
+    color: $color-info;
+  }
+}
+
+.stats {
+  display: flex;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-xs;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.statValue {
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: $font-size-sm;
+
+  &.idle {
+    color: $color-success;
+  }
+
+  &.working {
+    color: $color-warning;
+  }
+
+  &.rest {
+    color: $color-text-tertiary;
+  }
+}
+
+.statusDot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+
+  .idle & {
+    background: $color-success;
+  }
+
+  .working & {
+    background: $color-warning;
+  }
+
+  .rest & {
+    background: $color-text-tertiary;
+  }
+}
+
+.assignBtn {
+  @include button-reset;
+  height: $button-height-sm;
+  padding: 0 $spacing-lg;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.97);
+  }
+
+  &.disabled {
+    background: $color-bg-hover;
+    color: $color-text-disabled;
+  }
+}

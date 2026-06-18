@@ -1,0 +1,265 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  padding-bottom: 200rpx;
+}
+
+.callingBoard {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
+  padding: $spacing-xl $page-padding;
+  color: $color-text-white;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    right: -80rpx;
+    top: -80rpx;
+    width: 300rpx;
+    height: 300rpx;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: -60rpx;
+    bottom: -100rpx;
+    width: 240rpx;
+    height: 240rpx;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.boardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-xl;
+  position: relative;
+  z-index: 1;
+}
+
+.boardTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.liveDot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: #4CAF50;
+  box-shadow: 0 0 16rpx #4CAF50;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.boardTime {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.currentCall {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
+  margin-bottom: $spacing-lg;
+}
+
+.currentLeft {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.currentLabel {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.currentNumber {
+  font-size: 96rpx;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  letter-spacing: 4rpx;
+}
+
+.currentRight {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.currentName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+}
+
+.currentCourse {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.currentMeta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+  position: relative;
+  z-index: 1;
+}
+
+.metaItem {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  text-align: center;
+}
+
+.metaValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+}
+
+.metaLabel {
+  font-size: 22rpx;
+  opacity: 0.9;
+  margin-top: 4rpx;
+}
+
+.content {
+  padding: $spacing-md $page-padding 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.priorityLegend {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.legendDot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 4rpx;
+
+  &.urgent {
+    background: $color-error;
+  }
+
+  &.vip {
+    background: linear-gradient(135deg, #FFD54F 0%, #FFC107 100%);
+  }
+
+  &.normal {
+    background: $color-primary-bg;
+  }
+}
+
+.tabs {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xs;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.tab {
+  flex: 1;
+  padding: $spacing-sm;
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  border-radius: $radius-md;
+  transition: all $transition-base;
+  font-weight: $font-weight-medium;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc(#{$spacing-md} + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  display: flex;
+  gap: $spacing-md;
+  z-index: 100;
+}
+
+.actionBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.primary {
+    background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+    color: $color-text-white;
+  }
+
+  &.vip {
+    background: linear-gradient(135deg, #FFD54F 0%, #FFC107 100%);
+    color: #5D4037;
+  }
+
+  &.urgent {
+    background: linear-gradient(135deg, #FF5252 0%, #F44336 100%);
+    color: $color-text-white;
+  }
+}

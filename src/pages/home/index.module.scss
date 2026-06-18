@@ -1,0 +1,294 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+}
+
+.header {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: 48rpx $page-padding $spacing-xl;
+  color: $color-text-white;
+}
+
+.welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-xl;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: $radius-round;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.hello {
+  font-size: $font-size-md;
+  opacity: 0.9;
+}
+
+.name {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.vipBadge {
+  background: linear-gradient(135deg, #FFD54F 0%, #FFC107 100%);
+  color: #5D4037;
+  padding: 2rpx 12rpx;
+  border-radius: $radius-xs;
+  font-size: 20rpx;
+  font-weight: $font-weight-semibold;
+}
+
+.dateInfo {
+  font-size: $font-size-sm;
+  opacity: 0.8;
+  text-align: right;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-sm;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  backdrop-filter: blur(10px);
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.statValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+}
+
+.statLabel {
+  font-size: 22rpx;
+  opacity: 0.9;
+}
+
+.content {
+  padding: 0 $page-padding;
+  margin-top: -$spacing-lg;
+}
+
+.quickActions {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+}
+
+.actionItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+.actionIcon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: $radius-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  background: $color-primary-bg;
+
+  &.vip {
+    background: linear-gradient(135deg, rgba(255, 213, 79, 0.2) 0%, rgba(255, 193, 7, 0.3) 100%);
+  }
+
+  &.warning {
+    background: rgba(244, 67, 54, 0.1);
+  }
+
+  &.info {
+    background: rgba(25, 118, 210, 0.1);
+  }
+}
+
+.actionLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.queueSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.queueHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.queueCount {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.highlight {
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.currentNumber {
+  background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.currentLeft {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.currentIcon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-md;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+}
+
+.currentInfo {
+  color: $color-text-white;
+}
+
+.currentLabel {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.currentValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+}
+
+.currentRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: $color-text-white;
+}
+
+.currentName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+}
+
+.currentTime {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.nextUp {
+  background: $color-primary-bg;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.nextLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+}
+
+.nextItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nextNumber {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.nextInfo {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.bookingSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.bookingHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.viewAll {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}

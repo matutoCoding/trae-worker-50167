@@ -1,0 +1,52 @@
+@use '@/styles/variables.scss' as *;
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  line-height: 1.4;
+
+  &.success {
+    background: rgba(46, 125, 50, 0.1);
+    color: $color-success;
+  }
+
+  &.warning {
+    background: rgba(255, 152, 0, 0.1);
+    color: $color-warning;
+  }
+
+  &.error {
+    background: rgba(244, 67, 54, 0.1);
+    color: $color-error;
+  }
+
+  &.info {
+    background: rgba(25, 118, 210, 0.1);
+    color: $color-info;
+  }
+
+  &.vip {
+    background: linear-gradient(135deg, #FFD54F 0%, #FFC107 100%);
+    color: #5D4037;
+  }
+
+  &.urgent {
+    background: rgba(244, 67, 54, 0.15);
+    color: $color-error;
+  }
+
+  &.primary {
+    background: rgba(46, 125, 50, 0.1);
+    color: $color-primary;
+  }
+
+  &.default {
+    background: $color-bg-hover;
+    color: $color-text-secondary;
+  }
+}
