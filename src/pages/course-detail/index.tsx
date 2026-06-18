@@ -48,6 +48,7 @@ const CourseDetailPage: React.FC = () => {
 
   const bookings = useAppStore((s) => s.bookings);
   const addBooking = useAppStore((s) => s.addBooking);
+  const hasBookingConflict = useAppStore((s) => s.hasBookingConflict);
 
   useLoad((options) => {
     const id = (options as { id?: string })?.id;
@@ -58,19 +59,19 @@ const CourseDetailPage: React.FC = () => {
 
   const course = getCourseById(courseId);
 
-  const occupiedStartTimes = useMemo(() => {
-    return new Set(
-      bookings
-        .filter((b) => b.courseId === courseId && b.date === date && b.status !== 'cancelled')
-        .map((b) => b.startTime)
-    );
+  const todayBookingsCount = useMemo(() => {
+    return bookings.filter((b) => b.courseId === courseId && b.date === date && b.status !== 'cancelled').length;
   }, [bookings, courseId, date]);
+
+  const isSlotOccupied = (start: string, end: string): boolean => {
+    return hasBookingConflict(courseId, date, start, end);
+  };
 
   const isCourseBookable = course && course.status === 'available';
 
   const handleSlotClick = (slot: Slot) => {
-    if (occupiedStartTimes.has(slot.start)) {
-      Taro.showToast({ title: '该时段已被占用', icon: 'none' });
+    if (isSlotOccupied(slot.start, slot.end)) {
+      Taro.showToast({ title: '该时段与已有预订冲突', icon: 'none' });
       return;
     }
     setSelectedSlot(slot.start);
@@ -90,6 +91,10 @@ const CourseDetailPage: React.FC = () => {
       return;
     }
     const slot = ALL_SLOTS.find((s) => s.start === selectedSlot)!;
+    if (hasBookingConflict(course.id, date, slot.start, slot.end)) {
+      Taro.showToast({ title: '该时段已被占用，请重新选择', icon: 'none' });
+      return;
+    }
     const id = addBooking({
       memberId: currentMember.id,
       memberName: currentMember.name,
@@ -104,6 +109,10 @@ const CourseDetailPage: React.FC = () => {
       isVip: currentMember.isVip,
       isCycle: false
     });
+    if (!id) {
+      Taro.showToast({ title: '预订失败，时段冲突', icon: 'none' });
+      return;
+    }
     Taro.showToast({ title: '预订成功', icon: 'success' });
     console.info('[Booking] 球道详情页提交新预订', id);
     setTimeout(() => {
@@ -145,7 +154,7 @@ const CourseDetailPage: React.FC = () => {
             <Text className={styles.metaLabel}>容纳人数</Text>
           </View>
           <View className={styles.metaItem}>
-            <Text className={styles.metaValue}>{course.todayBookings}</Text>
+            <Text className={styles.metaValue}>{todayBookingsCount}</Text>
             <Text className={styles.metaLabel}>今日预订</Text>
           </View>
         </View>
@@ -179,7 +188,7 @@ const CourseDetailPage: React.FC = () => {
         <View className={styles.formCard}>
           <View className={styles.slotGrid}>
             {ALL_SLOTS.map((slot) => {
-              const occupied = occupiedStartTimes.has(slot.start);
+              const occupied = isSlotOccupied(slot.start, slot.end);
               const selected = selectedSlot === slot.start;
               return (
                 <Button
@@ -192,7 +201,7 @@ const CourseDetailPage: React.FC = () => {
                   disabled={occupied}
                 >
                   <Text className={styles.slotTime}>{slot.start}</Text>
-                  <Text className={styles.slotStatus}>{occupied ? '已占用' : '可预订'}</Text>
+                  <Text className={styles.slotStatus}>{occupied ? '时段冲突' : '可预订'}</Text>
                 </Button>
               );
             })}

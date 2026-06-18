@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import Taro from '@tarojs/taro';
 import type { Booking, CycleRule, QueueItem, QueuePriority } from '@/types';
 import { bookings as initialBookings, cycleRules as initialCycleRules } from '@/data/bookings';
 import { queueItems as initialQueueItems } from '@/data/queue';
@@ -6,44 +7,157 @@ import { getMemberById } from '@/data/members';
 import { getCourseById } from '@/data/courses';
 import { formatDateTime } from '@/utils/date';
 
-interface AppState {
+const STORAGE_KEY = 'golf_booking_app_state_v1';
+
+const priorityWeight: Record<QueuePriority, number> = { urgent: 0, vip: 1, normal: 2 };
+
+const loadPersistedState = (): {
   bookings: Booking[];
   cycleRules: CycleRule[];
   queueItems: QueueItem[];
+  maxBookingSeq: number;
+  maxCycleSeq: number;
+  maxQueueSeq: number;
+  maxQueueNumber: number;
+} => {
+  try {
+    const raw = Taro.getStorageSync(STORAGE_KEY);
+    if (!raw) {
+      console.info('[Store] 无持久化数据，使用初始数据');
+      return {
+        bookings: initialBookings,
+        cycleRules: initialCycleRules,
+        queueItems: initialQueueItems,
+        maxBookingSeq: 100,
+        maxCycleSeq: 100,
+        maxQueueSeq: 200,
+        maxQueueNumber: 200
+      };
+    }
+    const data = JSON.parse(raw);
+    const bkSeq = Math.max(
+      100,
+      ...(data.bookings || []).map((b: Booking) => {
+        const m = b.id.match(/^b(\d+)$/);
+        return m ? Number(m[1]) : 0;
+      })
+    );
+    const cySeq = Math.max(
+      100,
+      ...(data.cycleRules || []).map((c: CycleRule) => {
+        const m = c.id.match(/^cy(\d+)$/);
+        return m ? Number(m[1]) : 0;
+      })
+    );
+    const qSeq = Math.max(
+      200,
+      ...(data.queueItems || []).map((q: QueueItem & { seq?: number }) => q.seq || 0)
+    );
+    const qNum = Math.max(
+      200,
+      ...(data.queueItems || []).map((q: QueueItem) => q.number)
+    );
+    console.info('[Store] 加载持久化数据成功', {
+      bookings: data.bookings?.length,
+      cycleRules: data.cycleRules?.length,
+      queueItems: data.queueItems?.length
+    });
+    return {
+      bookings: data.bookings || initialBookings,
+      cycleRules: data.cycleRules || initialCycleRules,
+      queueItems: data.queueItems || initialQueueItems,
+      maxBookingSeq: bkSeq,
+      maxCycleSeq: cySeq,
+      maxQueueSeq: qSeq,
+      maxQueueNumber: qNum
+    };
+  } catch (e) {
+    console.error('[Store] 读取持久化数据失败', e);
+    return {
+      bookings: initialBookings,
+      cycleRules: initialCycleRules,
+      queueItems: initialQueueItems,
+      maxBookingSeq: 100,
+      maxCycleSeq: 100,
+      maxQueueSeq: 200,
+      maxQueueNumber: 200
+    };
+  }
+};
+
+const persisted = loadPersistedState();
+let bookingSeq = persisted.maxBookingSeq;
+let cycleSeq = persisted.maxCycleSeq;
+let queueSeq = persisted.maxQueueSeq;
+let queueNumberSeq = persisted.maxQueueNumber;
+
+interface AppState {
+  bookings: Booking[];
+  cycleRules: CycleRule[];
+  queueItems: (QueueItem & { seq: number })[];
+
+  hasBookingConflict: (courseId: string, date: string, startTime: string, endTime: string, excludeId?: string) => boolean;
 
   addBooking: (data: Omit<Booking, 'id' | 'createdAt' | 'status'> & { status?: Booking['status'] }) => string;
-  updateBooking: (id: string, patch: Partial<Booking>) => void;
+  updateBooking: (id: string, patch: Partial<Booking>) => boolean;
   cancelBooking: (id: string) => void;
   getBookingById: (id: string) => Booking | undefined;
 
-  addCycleRule: (data: Omit<CycleRule, 'id' | 'generatedCount' | 'totalCount'>) => void;
+  addCycleRule: (data: Omit<CycleRule, 'id' | 'generatedCount' | 'totalCount'>) => string;
   updateCycleRule: (id: string, patch: Partial<CycleRule>) => void;
   toggleCycleRule: (id: string) => void;
   getCycleRuleById: (id: string) => CycleRule | undefined;
 
   takeNumber: (priority: QueuePriority, courseId: string, playerCount: number) => string;
-  callNext: () => void;
-  getSortedQueue: () => QueueItem[];
-  getCalledQueue: () => QueueItem[];
+  callNext: () => string | null;
+  getSortedQueue: () => (QueueItem & { seq: number })[];
+  getCalledQueue: () => (QueueItem & { seq: number })[];
 }
 
-let bookingSeq = 100;
-let cycleSeq = 100;
-let queueSeq = 200;
+const timeToMinutes = (t: string): number => {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+};
 
-const estimateTime = (priority: QueuePriority): string => {
-  const now = new Date();
-  const baseDelay = priority === 'urgent' ? 15 : priority === 'vip' ? 25 : 45;
-  now.setMinutes(now.getMinutes() + baseDelay);
-  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+const computeBookingConflict = (
+  bookings: Booking[],
+  courseId: string,
+  date: string,
+  startTime: string,
+  endTime: string,
+  excludeId?: string
+): boolean => {
+  const startMin = timeToMinutes(startTime);
+  const endMin = timeToMinutes(endTime);
+  if (startMin >= endMin) return true;
+  return bookings.some((b) => {
+    if (excludeId && b.id === excludeId) return false;
+    if (b.courseId !== courseId) return false;
+    if (b.date !== date) return false;
+    if (b.status === 'cancelled') return false;
+    const bs = timeToMinutes(b.startTime);
+    const be = timeToMinutes(b.endTime);
+    return startMin < be && endMin > bs;
+  });
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
-  bookings: initialBookings,
-  cycleRules: initialCycleRules,
-  queueItems: initialQueueItems,
+  bookings: persisted.bookings,
+  cycleRules: persisted.cycleRules,
+  queueItems: persisted.queueItems.map((q, idx) => ({
+    ...q,
+    seq: (q as QueueItem & { seq?: number }).seq || 200 + idx + 1
+  })) as (QueueItem & { seq: number })[],
+
+  hasBookingConflict: (courseId, date, startTime, endTime, excludeId) => {
+    return computeBookingConflict(get().bookings, courseId, date, startTime, endTime, excludeId);
+  },
 
   addBooking: (data) => {
+    if (computeBookingConflict(get().bookings, data.courseId, data.date, data.startTime, data.endTime)) {
+      console.warn('[Booking] 新增预订被冲突拦截', data.courseId, data.date, data.startTime);
+      return '';
+    }
     const id = `b${++bookingSeq}`;
     const createdAt = formatDateTime(new Date());
     const booking: Booking = {
@@ -58,10 +172,27 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   updateBooking: (id, patch) => {
+    const current = get().bookings.find((b) => b.id === id);
+    if (!current) return false;
+
+    const nextCourseId = patch.courseId || current.courseId;
+    const nextDate = patch.date || current.date;
+    const nextStart = patch.startTime || current.startTime;
+    const nextEnd = patch.endTime || current.endTime;
+
+    if (
+      (patch.courseId || patch.date || patch.startTime || patch.endTime) &&
+      computeBookingConflict(get().bookings, nextCourseId, nextDate, nextStart, nextEnd, id)
+    ) {
+      console.warn('[Booking] 更新预订被冲突拦截', id, patch);
+      return false;
+    }
+
     set((state) => ({
       bookings: state.bookings.map((b) => (b.id === id ? { ...b, ...patch } : b))
     }));
     console.info('[Booking] 更新预订', id, patch);
+    return true;
   },
 
   cancelBooking: (id) => {
@@ -85,6 +216,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
     set((state) => ({ cycleRules: [rule, ...state.cycleRules] }));
     console.info('[Cycle] 新增周期规则', id, rule);
+    return id;
   },
 
   updateCycleRule: (id, patch) => {
@@ -106,16 +238,25 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   takeNumber: (priority, courseId, playerCount) => {
     const id = `q${++queueSeq}`;
-    const number = queueSeq;
+    const number = ++queueNumberSeq;
+    const seq = queueSeq;
     const course = getCourseById(courseId);
     const member = getMemberById('m001') || getMemberById('m002');
     if (!member || !course) {
+      --queueNumberSeq;
+      --queueSeq;
       console.error('[Queue] 取号失败，会员或球道不存在', { priority, courseId });
       return '';
     }
-    const item: QueueItem = {
+    const now = new Date();
+    const baseDelay = priority === 'urgent' ? 15 : priority === 'vip' ? 25 : 45;
+    now.setMinutes(now.getMinutes() + baseDelay);
+    const estimatedTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    const item: QueueItem & { seq: number } = {
       id,
       number,
+      seq,
       memberId: member.id,
       memberName: member.name,
       memberAvatar: member.avatar,
@@ -124,11 +265,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       status: 'waiting',
       priority,
       playerCount,
-      estimatedTime: estimateTime(priority),
+      estimatedTime,
       joinedAt: formatDateTime(new Date())
     };
     set((state) => ({ queueItems: [item, ...state.queueItems] }));
-    console.info('[Queue] 取号成功', id, item);
+    console.info('[Queue] 取号成功', id, number, priority);
     return id;
   },
 
@@ -137,7 +278,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const next = sorted[0];
     if (!next) {
       console.warn('[Queue] 队列为空，无下一位');
-      return;
+      return null;
     }
     set((state) => ({
       queueItems: state.queueItems.map((q) =>
@@ -145,21 +286,36 @@ export const useAppStore = create<AppState>((set, get) => ({
       )
     }));
     console.info('[Queue] 叫号', next.id, next.number);
+    return next.id;
   },
 
   getSortedQueue: () => {
-    const priorityWeight: Record<QueuePriority, number> = { urgent: 0, vip: 1, normal: 2 };
     return [...get().queueItems]
       .filter((item) => item.status === 'waiting')
       .sort((a, b) => {
-        if (priorityWeight[a.priority] !== priorityWeight[b.priority]) {
-          return priorityWeight[a.priority] - priorityWeight[b.priority];
-        }
-        return a.joinedAt.localeCompare(b.joinedAt);
+        const pa = priorityWeight[a.priority];
+        const pb = priorityWeight[b.priority];
+        if (pa !== pb) return pa - pb;
+        return a.seq - b.seq;
       });
   },
 
   getCalledQueue: () => {
-    return get().queueItems.filter((item) => item.status === 'called' || item.status === 'playing');
+    return get().queueItems
+      .filter((item) => item.status === 'called' || item.status === 'playing')
+      .sort((a, b) => b.seq - a.seq);
   }
 }));
+
+useAppStore.subscribe((state) => {
+  try {
+    const payload = {
+      bookings: state.bookings,
+      cycleRules: state.cycleRules,
+      queueItems: state.queueItems
+    };
+    Taro.setStorageSync(STORAGE_KEY, JSON.stringify(payload));
+  } catch (e) {
+    console.error('[Store] 持久化失败', e);
+  }
+});

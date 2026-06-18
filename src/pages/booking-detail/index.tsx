@@ -46,8 +46,12 @@ const BookingDetailPage: React.FC = () => {
       Taro.showToast({ title: '开始时间需早于结束时间', icon: 'none' });
       return;
     }
-    updateBooking(booking.id, { date, startTime, endTime, playerCount });
-    Taro.showToast({ title: '修改已保存', icon: 'success' });
+    const ok = updateBooking(booking.id, { date, startTime, endTime, playerCount });
+    if (ok) {
+      Taro.showToast({ title: '修改已保存', icon: 'success' });
+    } else {
+      Taro.showToast({ title: '时段冲突，无法修改', icon: 'none' });
+    }
   };
 
   const handleCancel = () => {
